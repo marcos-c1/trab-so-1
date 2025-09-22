@@ -1,94 +1,96 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#define PROCESS_NUM 15
 
-typedef struct Processo {
-    int idProcesso, tempoEntrada, tempoIO, tempoProcessamento, prioridade;
-} Processo;
+typedef struct Process {
+  int id;
+  int inputTime;
+  int IOtime;
+  int processTime;
+  int priority;
+  int isUp;
+} Process;
 
-typedef struct Fila {
-    Processo processo;
-    struct Fila *proximoProcesso;
-} Fila;
+typedef struct {
+  Process items[PROCESS_NUM];
+  int size;
+} PriorityQueue;
 
-typedef struct FilaPrioridade {
-    Processo processo;
-    struct FilaPrioridade *proximoProcesso;
-} FilaPrioridade;
-
-FilaPrioridade * criaProcesso(FilaPrioridade *pq, Processo p){
-    pq = malloc(sizeof(FilaPrioridade));
-    pq->processo = p;
-    pq->proximoProcesso = NULL;
-
-    return pq;
+void swap(Process *a, Process *b) {
+  Process temp = *a;
+  *a = *b;
+  *b = temp;
 }
 
-FilaPrioridade * adicionaProcesso(FilaPrioridade *pq, Processo p){
-    if(pq == NULL){
-        pq = criaProcesso(pq, p);
-        printf("ID Processo: %d\tPrioridade: %d\n", pq->processo.idProcesso, pq->processo.prioridade);
-
-    } else {
-        int prioridadeAnt = pq->processo.prioridade;
-        int prioridadeAtual = p.prioridade;
-
-        if(prioridadeAnt > prioridadeAtual){
-            FilaPrioridade *noAux, *noAux2;
-            noAux2 = pq;
-            noAux = criaProcesso(noAux, p);
-            pq = noAux;
-            pq->proximoProcesso = noAux2;
-
-            free(noAux);
-            free(noAux2);
-        } else {
-            adicionaProcesso(pq->proximoProcesso, p);
-        }
-    }
-    return pq;
+void heapifyUp(PriorityQueue *pq, int index) {
+  if (index &&
+      pq->items[(index - 1) / 2].priority > pq->items[index].priority) {
+    swap(&pq->items[(index - 1) / 2], &pq->items[index]);
+    heapifyUp(pq, (index - 1) / 2);
+  }
 }
 
-void printaFila(FilaPrioridade *pq){
-    FilaPrioridade *noAux = pq;
-   
-    while(noAux != NULL){
-        printf("ID Processo: %d\tPrioridade: %d\n", noAux->processo.idProcesso, noAux->processo.prioridade);
-        noAux = noAux->proximoProcesso;
-    }
-
-    free(noAux);
+void enqueue(PriorityQueue *pq, Process value) {
+  pq->items[pq->size++] = value;
+  heapifyUp(pq, pq->size - 1);
 }
 
-// 1 -> 2 -> 3 -> 4
+int heapifyDown(PriorityQueue *pq, int index) {
+  int smallest = index;
+  int left = 2 * index + 1;
+  int right = 2 * index + 2;
 
-// Receber um arquivo dados.txt e atribuir em uma varíavel
-// Ler esse arquivo tanto por delimitador quanto por linha
-// Ao ler por delimitador, atribuir os valores de cada coluna em suas respectivas variaveis
-// Criar as estruturas de fila (simples e prioritaria)
-// Depois fazer a logica do programa
-int main(){
-    Processo p;
+  if (left < pq->size &&
+      pq->items[left].priority < pq->items[smallest].priority)
+    smallest = left;
 
-    FILE *f = fopen("dados.txt", "r");
-    FilaPrioridade *pq = NULL; 
-    Fila *q = NULL;
+  if (right < pq->size &&
+      pq->items[right].priority < pq->items[smallest].priority)
+    smallest = right;
 
-    if(f == NULL){
-        fprintf(stderr, "Erro ao abrir o buffer para receber o arquivo");
-        return EXIT_FAILURE;
-    }
+  if (smallest != index) {
+    swap(&pq->items[index], &pq->items[smallest]);
+    heapifyDown(pq, smallest);
+  }
+}
 
-    // ID 1: 3
-    // 2  1 
-    // ID 2: 2
-    while(fscanf(f, "%d;%d;%d;%d;%d", &p.idProcesso, &p.tempoEntrada, &p.tempoIO, &p.tempoProcessamento, &p.prioridade) != EOF){
-        pq = adicionaProcesso(pq, p);
-    }
-    if(pq != NULL) printf("Existe a fila");
-    printaFila(pq);
+Process dequeue(PriorityQueue *pq) {
+  Process item = pq->items[0];
+  pq->items[0] = pq->items[--pq->size];
+  heapifyDown(pq, 0);
+  return item;
+}
 
-    fclose(f);
-    free(pq);
-    free(q);
-    return EXIT_SUCCESS;
+Process peek(PriorityQueue *pq) {
+  assert(!pq->size);
+
+  return pq->items[0];
+}
+
+void print(PriorityQueue *pq) {
+  for (int i = 0; i < PROCESS_NUM; i++) {
+    printf("ID: %d, Priority: %d\n", pq->items[i].id, pq->items[i].priority);
+  }
+}
+
+int main() {
+  Process p;
+
+  FILE *f = fopen("dados.txt", "r");
+  PriorityQueue pq = {{0}, 0};
+
+  if (f == NULL) {
+    fprintf(stderr, "Erro ao abrir o buffer para receber o arquivo");
+    return -1;
+  }
+
+  while (fscanf(f, "%d;%d;%d;%d;%d", &p.id, &p.inputTime, &p.IOtime,
+                &p.processTime, &p.priority) != EOF) {
+    enqueue(&pq, p);
+  }
+  print(&pq);
+  fclose(f);
+
+  return 0;
 }
