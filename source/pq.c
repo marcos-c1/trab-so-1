@@ -1,27 +1,4 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#define PROCESS_NUM 15
-
-typedef struct Process {
-  int id;
-  int inputTime;
-  int IOtime;
-  int processTime;
-  int priority;
-  int isUp;
-} Process;
-
-typedef struct {
-  Process items[PROCESS_NUM];
-  int size;
-} PriorityQueue;
-
-void swap(Process *a, Process *b) {
-  Process temp = *a;
-  *a = *b;
-  *b = temp;
-}
+#include "../headers/pq.h"
 
 void heapifyUp(PriorityQueue *pq, int index) {
   if (index &&
@@ -36,7 +13,7 @@ void enqueue(PriorityQueue *pq, Process value) {
   heapifyUp(pq, pq->size - 1);
 }
 
-int heapifyDown(PriorityQueue *pq, int index) {
+void heapifyDown(PriorityQueue *pq, int index) {
   int smallest = index;
   int left = 2 * index + 1;
   int right = 2 * index + 2;
@@ -69,28 +46,7 @@ Process peek(PriorityQueue *pq) {
 }
 
 void print(PriorityQueue *pq) {
-  for (int i = 0; i < PROCESS_NUM; i++) {
+  for (int i = 0; i < pq->size; i++) {
     printf("ID: %d, Priority: %d\n", pq->items[i].id, pq->items[i].priority);
   }
-}
-
-int main() {
-  Process p;
-
-  FILE *f = fopen("dados.txt", "r");
-  PriorityQueue pq = {{0}, 0};
-
-  if (f == NULL) {
-    fprintf(stderr, "Erro ao abrir o buffer para receber o arquivo");
-    return -1;
-  }
-
-  while (fscanf(f, "%d;%d;%d;%d;%d", &p.id, &p.inputTime, &p.IOtime,
-                &p.processTime, &p.priority) != EOF) {
-    enqueue(&pq, p);
-  }
-  print(&pq);
-  fclose(f);
-
-  return 0;
 }

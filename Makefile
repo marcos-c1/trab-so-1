@@ -1,4 +1,4 @@
 run:
-	gcc main.c -o main.o
+	gcc  source/process.c source/pq.c source/queue.c source/main.c -o objects/main.o
 rm:
 	rm *.o
