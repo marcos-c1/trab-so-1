@@ -12,7 +12,7 @@ typedef struct Process {
   int IOtime;
   int processTime;
   int priority;
-  int isUp;
+  int isFinished;
 } Process;
 
 void swap(Process *a, Process *b);
